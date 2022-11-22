@@ -21,8 +21,11 @@ pub async fn get_slug(slug: &str) -> String {
     }
     return "".to_string()
 }
-
+/*
 pub async fn set_slug(slug: &str, domain: &str) {
     let db: sled::Db = sled::open("my_db").unwrap();
     db.insert(slug.bytes(), domain.bytes()).unwrap();
 }
+
+
+ */

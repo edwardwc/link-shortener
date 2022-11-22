@@ -1,7 +1,9 @@
 mod slugs;
 
+use std::borrow::Borrow;
 use salvo::__private::tracing::error;
 use salvo::prelude::{Request, Response, StatusCode, Router, Server, TcpListener, handler};
+use serde::{Serialize, Deserialize};
 
 #[handler]
 async fn link_shortener(req: &mut Request, mut res: &mut Response) {
@@ -30,10 +32,30 @@ async fn homepage(req: &mut Request, mut res: &mut Response) {
 }
 
 #[handler]
-async fn set_shortener(req: &mut Request, mut res: &mut Response) {
-    res.render("Homepage!")
+async fn set_shortener(req: &mut Request, res: &mut Response) {
+    let parsed_link_shortener = req.parse_json::<LinkShortener>().await;
+    match parsed_link_shortener {
+        Ok(t) => {
+            res.render(t.domain)
+        }
+        Err(e) => {
+            res.render("Couldn't get domain");
+            error!("Error: {e}")
+        }
+    }
+    res.render("This shouldn't be hit!")
 }
 
+#[derive(Serialize, Deserialize, Extractible, Debug)]
+#[extract(
+default_source(from = "query"),
+default_source(from = "param"),
+default_source(from = "body")
+)]
+struct LinkShortener<'a> {
+    slug: &'a str,
+    domain: &'a str
+}
 
 #[tokio::main]
 async fn main() {
@@ -50,6 +72,6 @@ async fn main() {
             Router::with_path("/add-shortener")
                 .post(set_shortener)
         );
-    slugs::set_slug("lol", "https://edward.engineer");
+    //slugs::set_slug("lol", "https://edward.engineer");
     Server::new(TcpListener::bind("127.0.0.1:7878")).serve(router).await;
 }
