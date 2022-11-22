@@ -33,28 +33,23 @@ async fn homepage(req: &mut Request, mut res: &mut Response) {
 
 #[handler]
 async fn set_shortener(req: &mut Request, res: &mut Response) {
-    let parsed_link_shortener = req.parse_json::<LinkShortener>().await;
-    match parsed_link_shortener {
+    match req.parse_json::<LinkShortener>().await {
         Ok(t) => {
-            res.render(t.domain)
+            res.render(t.domain);
+            return;
         }
         Err(e) => {
             res.render("Couldn't get domain");
-            error!("Error: {e}")
+            error!("Error: {e}");
+            return
         }
     }
-    res.render("This shouldn't be hit!")
 }
 
-#[derive(Serialize, Deserialize, Extractible, Debug)]
-#[extract(
-default_source(from = "query"),
-default_source(from = "param"),
-default_source(from = "body")
-)]
-struct LinkShortener<'a> {
-    slug: &'a str,
-    domain: &'a str
+#[derive(Serialize, Deserialize, Debug)]
+struct LinkShortener {
+    slug: String,
+    domain: String
 }
 
 #[tokio::main]
