@@ -51,6 +51,11 @@ async fn set_shortener(req: &mut Request, mut res: &mut Response) {
     }
 }
 
+#[handler]
+async fn get_options(mut res: &mut Response) {
+    res.set_status_code(StatusCode::OK);
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct LinkShortener {
     domain: String
@@ -76,6 +81,7 @@ async fn main() {
         .push(
             Router::with_path("/add-shortener")
                 .post(set_shortener)
+                .options(get_options)
         );
     //slugs::set_slug("lol", "https://edward.engineer");
     Server::new(TcpListener::bind("0.0.0.0:7878")).serve(router).await;
