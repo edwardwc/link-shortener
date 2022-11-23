@@ -45,6 +45,10 @@ async fn set_shortener(req: &mut Request, mut res: &mut Response) {
             error!("Error: {e}");
         }
     }
+    match res.with_header("Access-Control-Allow-Origin", "*", true) {
+        Ok(t) => res = t,
+        Err(e) => error!("Failed to set headers: {e}")
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]

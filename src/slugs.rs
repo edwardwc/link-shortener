@@ -1,5 +1,4 @@
 // slugs.rs will include getSlug and setSlug for setting values to our link shortener
-use sled::IVec;
 use salvo::__private::tracing::error;
 use names::Generator;
 
