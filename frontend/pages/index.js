@@ -40,8 +40,7 @@ async function shortenLinkForm() {
             domain: event.target.domain.value
         }),
         headers: {
-            'Content-Type': 'application/json',
-            'mode': 'no-cors'
+            'Content-Type': 'application/json'
         },
         method: 'POST',
     });
