@@ -35,10 +35,6 @@ async fn homepage(mut res: &mut Response) {
 
 #[handler]
 async fn set_shortener(req: &mut Request, mut res: &mut Response) {
-    match res.with_header("Content-Type", "text/html; charset=utf-8", true) {
-        Ok(t) => res = t,
-        Err(e) => error!("Failed to set headers: {e}")
-    }
     match req.parse_json::<LinkShortener>().await {
         Ok(t) => {
             res.render(slugs::set_slug(t.domain).await)
