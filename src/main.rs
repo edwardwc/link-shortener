@@ -1,8 +1,11 @@
 mod slugs;
 
+use std::borrow::{Borrow, BorrowMut};
 use salvo::__private::tracing::error;
 use salvo::prelude::{Request, Response, StatusCode, Router, Server, TcpListener, handler};
 use salvo::cors::Cors;
+use salvo::http::header::{self, HeaderValue};
+use salvo::prelude::*;
 use serde::{Serialize, Deserialize};
 
 #[handler]
@@ -37,7 +40,13 @@ async fn homepage(mut res: &mut Response) {
 async fn set_shortener(req: &mut Request, mut res: &mut Response) {
     match req.parse_json::<LinkShortener>().await {
         Ok(t) => {
-            res.render(slugs::set_slug(t.domain).await)
+            if t.domain.contains(".") {
+                let domain = slugs::set_slug(t.domain).await;
+                res.render("https://api.swath.cc/".to_owned() + &domain)
+            } else {
+                res.set_status_code(StatusCode::BAD_REQUEST);
+                res.render("That doesn't look like a domain!")
+            }
         }
         Err(e) => {
             res.set_status_code(StatusCode::BAD_REQUEST);
@@ -45,14 +54,25 @@ async fn set_shortener(req: &mut Request, mut res: &mut Response) {
             error!("Error: {e}");
         }
     }
-}
-
-#[handler]
-async fn get_options(mut res: &mut Response) {
     match res.with_header("Access-Control-Allow-Origin", "*", true) {
         Ok(t) => res = t,
         Err(e) => error!("Failed to set headers: {e}")
     }
+}
+
+#[handler]
+async fn get_options(mut res: &mut Response) {
+    res.set_status_code(StatusCode::OK);
+    match res.with_header("Access-Control-Allow-Origin", "*", true) {
+        Ok(t) => res = t,
+        Err(e) => error!("Failed to set headers: {e}")
+    }
+}
+
+#[handler]
+async fn add_header(res: &mut Response) {
+    res.headers_mut()
+        .insert(header::ACCESS_CONTROL_ALLOW_HEADERS, HeaderValue::from_static("Content-Type"));
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -63,12 +83,6 @@ struct LinkShortener {
 #[tokio::main]
 async fn main() {
     let router = Router::new()
-        .hoop(
-            Cors::builder()
-                  .allow_origin("https://swath.cc")
-                  .allow_methods(vec!["GET", "POST", "DELETE", "OPTIONS"])
-                  .build()
-        )
         .push(
             Router::with_path("<*>")
                 .get(link_shortener)
@@ -79,8 +93,9 @@ async fn main() {
         )
         .push(
             Router::with_path("/add-shortener")
-                .post(set_shortener)
+                .hoop(add_header)
                 .options(get_options)
+                .post(set_shortener)
         );
     //slugs::set_slug("lol", "https://edward.engineer");
     Server::new(TcpListener::bind("0.0.0.0:7878")).serve(router).await;

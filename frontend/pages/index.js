@@ -35,7 +35,7 @@ export default function Home() {
 }
 async function shortenLinkForm() {
     event.preventDefault()
-    const result = await fetch('https://api.swath.cc/add-shortener', {
+    const result = await fetch('http://test.com:7878/add-shortener', {
         body: JSON.stringify({
             domain: event.target.domain.value
         }),
@@ -44,5 +44,9 @@ async function shortenLinkForm() {
         },
         method: 'POST',
     });
-    alert(result);
+    if (result.status === 200) {
+        alert((await result.text()))
+    } else {
+        alert(`Error: ${(await result.text())}, Status: ${result.statusText}`)
+    }
 }
