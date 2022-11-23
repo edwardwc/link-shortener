@@ -55,12 +55,6 @@ struct LinkShortener {
 #[tokio::main]
 async fn main() {
     let router = Router::new()
-        .hoop(
-            Cors::builder()
-                  .allow_origin("http://test.com:3000")
-                  .allow_methods(vec!["GET", "POST", "DELETE"])
-                  .build()
-        )
         .push(
             Router::with_path("<*>")
                 .get(link_shortener)
