@@ -35,7 +35,7 @@ export default function Home() {
 }
 async function shortenLinkForm() {
     event.preventDefault()
-    const result = await fetch('http://test.com:7878/add-shortener', {
+    const result = await fetch('https://api.swath.cc/add-shortener', {
         body: JSON.stringify({
             domain: event.target.domain.value
         }),
