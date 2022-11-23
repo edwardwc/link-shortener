@@ -1,8 +1,8 @@
 mod slugs;
 
-use std::borrow::Borrow;
 use salvo::__private::tracing::error;
 use salvo::prelude::{Request, Response, StatusCode, Router, Server, TcpListener, handler};
+use salvo::cors::Cors;
 use serde::{Serialize, Deserialize};
 
 #[handler]
@@ -34,11 +34,14 @@ async fn homepage(mut res: &mut Response) {
 }
 
 #[handler]
-async fn set_shortener(req: &mut Request, res: &mut Response) {
+async fn set_shortener(req: &mut Request, mut res: &mut Response) {
+    match res.with_header("Content-Type", "text/html; charset=utf-8", true) {
+        Ok(t) => res = t,
+        Err(e) => error!("Failed to set headers: {e}")
+    }
     match req.parse_json::<LinkShortener>().await {
         Ok(t) => {
-            slugs::set_slug(t.slug, t.domain).await;
-            println!("hi2");
+            res.render(slugs::set_slug(t.domain).await)
         }
         Err(e) => {
             res.set_status_code(StatusCode::BAD_REQUEST);
@@ -50,13 +53,18 @@ async fn set_shortener(req: &mut Request, res: &mut Response) {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct LinkShortener {
-    slug: String,
     domain: String
 }
 
 #[tokio::main]
 async fn main() {
     let router = Router::new()
+        .hoop(
+            Cors::builder()
+                  .allow_origin("http://test.com:3000")
+                  .allow_methods(vec!["GET", "POST", "DELETE"])
+                  .build()
+        )
         .push(
             Router::with_path("<*>")
                 .get(link_shortener)

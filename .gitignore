@@ -1,3 +1,5 @@
 /target
 .idea
 my_db
+frontend/node_modules
+oldfrontend

@@ -1,7 +1,7 @@
 // slugs.rs will include getSlug and setSlug for setting values to our link shortener
 use sled::IVec;
-use std::borrow::Borrow;
 use salvo::__private::tracing::error;
+use names::Generator;
 
 pub async fn get_slug(slug: &str) -> String {
     let db: sled::Db = sled::open("my_db").unwrap();
@@ -22,7 +22,9 @@ pub async fn get_slug(slug: &str) -> String {
     return "".to_string()
 }
 
-pub async fn set_slug(slug: String, domain: String) {
+pub async fn set_slug(domain: String) -> String {
+    let key = Generator::default().next().unwrap();
     let db: sled::Db = sled::open("my_db").unwrap();
-    db.insert(slug.into_bytes(), domain.into_bytes()).unwrap();
+    db.insert(key.clone().into_bytes(), domain.into_bytes()).unwrap(); // key has to be cloned here because the borrow checker
+    key
 }
