@@ -74,5 +74,5 @@ async fn main() {
                 .post(set_shortener)
         );
     //slugs::set_slug("lol", "https://edward.engineer");
-    Server::new(TcpListener::bind("127.0.0.1:7878")).serve(router).await;
+    Server::new(TcpListener::bind("0.0.0.0:7878")).serve(router).await;
 }
