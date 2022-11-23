@@ -8,10 +8,12 @@ use serde::{Serialize, Deserialize};
 #[handler]
 async fn link_shortener(req: &mut Request, mut res: &mut Response) {
     let vec: Vec<&str> = req.uri_mut().path().clone().split("/").collect(); // get the URI path, clone & split then turn it into a vector
-    println!("{}", vec[vec.len()-1]);
-    let slug_response = slugs::get_slug(vec[vec.len()-1]).await;
+    let mut slug_response = slugs::get_slug(vec[vec.len()-1]).await;
     if slug_response != "" {
         res.set_status_code(StatusCode::TEMPORARY_REDIRECT);
+        if !slug_response.contains("http") {
+            slug_response = "http://".to_owned() + &slug_response; // http for compatibility
+        }
         let result = res.with_header("Location", slug_response, true);
         match result {
             Err(e) => error!("Failed to set headers: {e}"),
@@ -23,7 +25,7 @@ async fn link_shortener(req: &mut Request, mut res: &mut Response) {
     }
 }
 #[handler]
-async fn homepage(req: &mut Request, mut res: &mut Response) {
+async fn homepage(mut res: &mut Response) {
     res.render("Homepage!");
     match res.with_header("Content-Type", "text/html; charset=utf-8", true) {
         Ok(t) => res = t,
@@ -35,13 +37,13 @@ async fn homepage(req: &mut Request, mut res: &mut Response) {
 async fn set_shortener(req: &mut Request, res: &mut Response) {
     match req.parse_json::<LinkShortener>().await {
         Ok(t) => {
-            res.render(t.domain);
-            return;
+            slugs::set_slug(t.slug, t.domain).await;
+            println!("hi2");
         }
         Err(e) => {
-            res.render("Couldn't get domain");
+            res.set_status_code(StatusCode::BAD_REQUEST);
+            res.render("Couldn't parse JSON data into a link shortener!");
             error!("Error: {e}");
-            return
         }
     }
 }
